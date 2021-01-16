@@ -12,23 +12,14 @@ type Cmd struct {
 	Op string
 }
 
-// CmdChan 指令管道
-var CmdChan = make(chan *Cmd, 100)
+// SendCmd 发送指令
+func SendCmd(cmd *Cmd) {
+	fmt.Println(cmd.Op)
+}
 
-// Start 启动守护线程
-func Start() {
+// Init 初始化
+func Init() {
 	loadActions()
-	go func() {
-		for {
-			select {
-			case cmd := <-CmdChan:
-				fmt.Println(cmd.Op)
-				if cmd.Op == "exit" {
-					return
-				}
-			}
-		}
-	}()
 }
 
 func loadActions() {
@@ -52,19 +43,29 @@ func loadActions() {
 	}
 
 	for _, list := range m.ActionLists {
+		fmt.Println("[ActionList]")
 		for _, action := range list.Actions {
-			fmt.Println(fmt.Sprintf("[Action]        Name=%s, Type=%s, Class=%s, BorderType=%s", action.Name, action.Type, action.Class, action.BorderType))
-			for _, anime := range action.Animations {
-				fmt.Println(fmt.Sprintf("- [Animation]"))
-				for _, pose := range anime.Poses {
-					fmt.Println(fmt.Sprintf("  - [Pose]      Image=%s, ImageAnchor=%s, Velocity=%s, Duration=%d, Sound=%s, Volume=%d", pose.Image, pose.ImageAnchor, pose.Velocity, pose.Duration, pose.Sound, pose.Volume))
-				}
-			}
-			for _, ref := range action.ActionRefs {
-				fmt.Println(fmt.Sprintf("  - [ActionRef] Name=%s", ref.Name))
-			}
+			_printAction(&action, 0)
 		}
 	}
+}
+
+func _printAction(action *action, level int) {
+	prefix := "                    "[:level*2]
+	fmt.Println(fmt.Sprintf("%s- [Action]        Name=%s, Type=%s, Class=%s, BorderType=%s", prefix, action.Name, action.Type, action.Class, action.BorderType))
+	for _, anime := range action.Animations {
+		fmt.Println(fmt.Sprintf("%s  - [Animation]", prefix))
+		for _, pose := range anime.Poses {
+			fmt.Println(fmt.Sprintf("%s    - [Pose]      Image=%s, ImageAnchor=%s, Velocity=%s, Duration=%s, Sound=%s, Volume=%d", prefix, pose.Image, pose.ImageAnchor, pose.Velocity, pose.Duration, pose.Sound, pose.Volume))
+		}
+	}
+	for _, ref := range action.ActionRefs {
+		fmt.Println(fmt.Sprintf("%s  - [ActionRef]   Name=%s, Duration=%s", prefix, ref.Name, ref.Duration))
+	}
+	for _, act := range action.Actions {
+		_printAction(&act, level+1)
+	}
+
 }
 
 type mascot struct {
@@ -91,8 +92,17 @@ type action struct {
 }
 
 type actionRef struct {
-	XMLName xml.Name `xml:"ActionReference"`
-	Name    string   `xml:"Name,attr"`
+	XMLName   xml.Name `xml:"ActionReference"`
+	Name      string   `xml:"Name,attr"`
+	Duration  string   `xml:"Duration,attr"`
+	InitialVX string   `xml:"InitialVX,attr"`
+	InitialVY string   `xml:"InitialVY,attr"`
+	X         string   `xml:"X,attr"`
+	Y         string   `xml:"Y,attr"`
+	TargetX   string   `xml:"TargetX,attr"`
+	TargetY   string   `xml:"TargetY,attr"`
+	LookRight string   `xml:"LookRight,attr"`
+	Condition string   `xml:"Condition,attr"`
 }
 
 type animation struct {
@@ -105,7 +115,7 @@ type pose struct {
 	Image       string   `xml:"Image,attr"`
 	ImageAnchor string   `xml:"ImageAnchor,attr"`
 	Velocity    string   `xml:"Velocity,attr"`
-	Duration    int      `xml:"Duration,attr"`
+	Duration    string   `xml:"Duration,attr"`
 	Sound       string   `xml:"Sound,attr"`
 	Volume      int      `xml:"Volume,attr"`
 }

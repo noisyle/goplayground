@@ -43,7 +43,7 @@ func Start() {
 			return
 		}
 
-		daemon.CmdChan <- &daemon.Cmd{Op: "left click"}
+		daemon.SendCmd(&daemon.Cmd{Op: "left_click"})
 
 		if err := ni.ShowCustom(
 			"Walk NotifyIcon Example",
@@ -60,7 +60,6 @@ func Start() {
 		log.Fatal(err)
 	}
 	exitAction.Triggered().Attach(func() {
-		daemon.CmdChan <- &daemon.Cmd{Op: "exit"}
 		walk.App().Exit(0)
 	})
 	if err := ni.ContextMenu().Actions().Add(exitAction); err != nil {
