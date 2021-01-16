@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	d := daemon.Init()
-	gui.Init(d)
+	d := daemon.Start()
+	gui.Start(d)
 }

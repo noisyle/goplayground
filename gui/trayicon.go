@@ -7,11 +7,11 @@ import (
 	"github.com/lxn/walk"
 )
 
-// Init 初始化 GUI
-func Init(d *daemon.Shimejid) {
+// Start 初始化 GUI
+func Start(d *daemon.Shimejid) {
 	w := new(mainWindow)
 	w.d = d
-	w.init()
+	w.start()
 }
 
 type mainWindow struct {
@@ -19,7 +19,7 @@ type mainWindow struct {
 	mw *walk.MainWindow
 }
 
-func (w *mainWindow) init() {
+func (w *mainWindow) start() {
 	// We need either a walk.MainWindow or a walk.Dialog for their message loop.
 	// We will not make it visible in this example, though.
 	mw, err := walk.NewMainWindow()

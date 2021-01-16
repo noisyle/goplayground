@@ -23,19 +23,19 @@ type ActionList struct {
 }
 
 type Action struct {
-	XMLName          xml.Name          `xml:"Action"`
-	Name             string            `xml:"Name,attr"`
-	Type             string            `xml:"Type,attr"`
-	BorderType       string            `xml:"BorderType,attr"`
-	Class            string            `xml:"Class,attr"`
-	Loop             bool              `xml:"Loop,attr"`
-	Condition        string            `xml:"Condition,attr"`
-	Animations       []Animation       `xml:"Animation"`
-	Actions          []Action          `xml:"Action"`
-	ActionReferences []ActionReference `xml:"ActionReference"`
+	XMLName    xml.Name    `xml:"Action"`
+	Name       string      `xml:"Name,attr"`
+	Type       string      `xml:"Type,attr"`
+	BorderType string      `xml:"BorderType,attr"`
+	Class      string      `xml:"Class,attr"`
+	Loop       bool        `xml:"Loop,attr"`
+	Condition  string      `xml:"Condition,attr"`
+	Animations []Animation `xml:"Animation"`
+	Actions    []Action    `xml:"Action"`
+	ActionRefs []ActionRef `xml:"ActionReference"`
 }
 
-type ActionReference struct {
+type ActionRef struct {
 	XMLName xml.Name `xml:"ActionReference"`
 	Name    string   `xml:"Name,attr"`
 }
@@ -55,8 +55,8 @@ type Pose struct {
 	Volume      int      `xml:"Volume,attr"`
 }
 
-// Init 启动守护协程
-func Init() *Shimejid {
+// Start 启动守护协程
+func Start() *Shimejid {
 	d := new(Shimejid)
 	d.loadActions()
 	go d.run()
@@ -70,7 +70,7 @@ func (d *Shimejid) SendMessage(s string) {
 
 func (d *Shimejid) run() {
 	for {
-		fmt.Println("Shimejid running")
+		// TODO
 		time.Sleep(100 * time.Millisecond)
 	}
 }
@@ -97,14 +97,15 @@ func (d *Shimejid) loadActions() {
 
 	for _, list := range m.ActionLists {
 		for _, action := range list.Actions {
-			fmt.Println(fmt.Sprintf("[Action]            Name: %s, Type; %s, Class; %s, BorderType; %s", action.Name, action.Type, action.Class, action.BorderType))
+			fmt.Println(fmt.Sprintf("[Action]        Name=%s, Type=%s, Class=%s, BorderType=%s", action.Name, action.Type, action.Class, action.BorderType))
 			for _, anime := range action.Animations {
+				fmt.Println(fmt.Sprintf("- [Animation]"))
 				for _, pose := range anime.Poses {
-					fmt.Println(fmt.Sprintf("- [Pose]            Image: %s ImageAnchor: %s Velocity: %s Duration: %d, Sound: %s, Volume: %d", pose.Image, pose.ImageAnchor, pose.Velocity, pose.Duration, pose.Sound, pose.Volume))
+					fmt.Println(fmt.Sprintf("  - [Pose]      Image=%s, ImageAnchor=%s, Velocity=%s, Duration=%d, Sound=%s, Volume=%d", pose.Image, pose.ImageAnchor, pose.Velocity, pose.Duration, pose.Sound, pose.Volume))
 				}
 			}
-			for _, ref := range action.ActionReferences {
-				fmt.Println(fmt.Sprintf("- [ActionReference] Name: %s", ref.Name))
+			for _, ref := range action.ActionRefs {
+				fmt.Println(fmt.Sprintf("  - [ActionRef] Name=%s", ref.Name))
 			}
 		}
 	}
