@@ -7,26 +7,14 @@ import (
 	"github.com/lxn/walk"
 )
 
-// Start 初始化 GUI
-func Start(d *daemon.Shimejid) {
-	w := new(mainWindow)
-	w.d = d
-	w.start()
-}
-
-type mainWindow struct {
-	d  *daemon.Shimejid
-	mw *walk.MainWindow
-}
-
-func (w *mainWindow) start() {
+// Start 启动 GUI
+func Start() {
 	// We need either a walk.MainWindow or a walk.Dialog for their message loop.
 	// We will not make it visible in this example, though.
 	mw, err := walk.NewMainWindow()
 	if err != nil {
 		log.Fatal(err)
 	}
-	w.mw = mw
 
 	// We load our icon from a file.
 	icon, err := walk.Resources.Image("icon.png")
@@ -55,7 +43,7 @@ func (w *mainWindow) start() {
 			return
 		}
 
-		w.d.SendMessage("左键点击托盘图标")
+		daemon.CmdChan <- &daemon.Cmd{Op: "left click"}
 
 		if err := ni.ShowCustom(
 			"Walk NotifyIcon Example",
@@ -71,7 +59,10 @@ func (w *mainWindow) start() {
 	if err := exitAction.SetText("E&xit"); err != nil {
 		log.Fatal(err)
 	}
-	exitAction.Triggered().Attach(func() { walk.App().Exit(0) })
+	exitAction.Triggered().Attach(func() {
+		daemon.CmdChan <- &daemon.Cmd{Op: "exit"}
+		walk.App().Exit(0)
+	})
 	if err := ni.ContextMenu().Actions().Add(exitAction); err != nil {
 		log.Fatal(err)
 	}

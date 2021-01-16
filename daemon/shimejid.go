@@ -5,77 +5,33 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 )
 
-// Shimejid 守护协程
-type Shimejid struct {
+// Cmd 指令
+type Cmd struct {
+	Op string
 }
 
-type Mascot struct {
-	XMLName     xml.Name     `xml:"Mascot"`
-	ActionLists []ActionList `xml:"ActionList"`
+// CmdChan 指令管道
+var CmdChan = make(chan *Cmd, 100)
+
+// Start 启动守护线程
+func Start() {
+	loadActions()
+	go func() {
+		for {
+			select {
+			case cmd := <-CmdChan:
+				fmt.Println(cmd.Op)
+				if cmd.Op == "exit" {
+					return
+				}
+			}
+		}
+	}()
 }
 
-type ActionList struct {
-	XMLName xml.Name `xml:"ActionList"`
-	Actions []Action `xml:"Action"`
-}
-
-type Action struct {
-	XMLName    xml.Name    `xml:"Action"`
-	Name       string      `xml:"Name,attr"`
-	Type       string      `xml:"Type,attr"`
-	BorderType string      `xml:"BorderType,attr"`
-	Class      string      `xml:"Class,attr"`
-	Loop       bool        `xml:"Loop,attr"`
-	Condition  string      `xml:"Condition,attr"`
-	Animations []Animation `xml:"Animation"`
-	Actions    []Action    `xml:"Action"`
-	ActionRefs []ActionRef `xml:"ActionReference"`
-}
-
-type ActionRef struct {
-	XMLName xml.Name `xml:"ActionReference"`
-	Name    string   `xml:"Name,attr"`
-}
-
-type Animation struct {
-	XMLName xml.Name `xml:"Animation"`
-	Poses   []Pose   `xml:"Pose"`
-}
-
-type Pose struct {
-	XMLName     xml.Name `xml:"Pose"`
-	Image       string   `xml:"Image,attr"`
-	ImageAnchor string   `xml:"ImageAnchor,attr"`
-	Velocity    string   `xml:"Velocity,attr"`
-	Duration    int      `xml:"Duration,attr"`
-	Sound       string   `xml:"Sound,attr"`
-	Volume      int      `xml:"Volume,attr"`
-}
-
-// Start 启动守护协程
-func Start() *Shimejid {
-	d := new(Shimejid)
-	d.loadActions()
-	go d.run()
-	return d
-}
-
-// SendMessage 发送文字
-func (d *Shimejid) SendMessage(s string) {
-	fmt.Println(s)
-}
-
-func (d *Shimejid) run() {
-	for {
-		// TODO
-		time.Sleep(100 * time.Millisecond)
-	}
-}
-
-func (d *Shimejid) loadActions() {
+func loadActions() {
 	// 加载配置文件
 	file, err := os.Open("conf/actions.xml")
 	if err != nil {
@@ -88,7 +44,7 @@ func (d *Shimejid) loadActions() {
 		fmt.Printf("error: %v", err)
 		return
 	}
-	m := Mascot{}
+	m := mascot{}
 	err = xml.Unmarshal(data, &m)
 	if err != nil {
 		fmt.Printf("error: %v", err)
@@ -109,4 +65,47 @@ func (d *Shimejid) loadActions() {
 			}
 		}
 	}
+}
+
+type mascot struct {
+	XMLName     xml.Name     `xml:"Mascot"`
+	ActionLists []actionList `xml:"ActionList"`
+}
+
+type actionList struct {
+	XMLName xml.Name `xml:"ActionList"`
+	Actions []action `xml:"Action"`
+}
+
+type action struct {
+	XMLName    xml.Name    `xml:"Action"`
+	Name       string      `xml:"Name,attr"`
+	Type       string      `xml:"Type,attr"`
+	BorderType string      `xml:"BorderType,attr"`
+	Class      string      `xml:"Class,attr"`
+	Loop       bool        `xml:"Loop,attr"`
+	Condition  string      `xml:"Condition,attr"`
+	Animations []animation `xml:"Animation"`
+	Actions    []action    `xml:"Action"`
+	ActionRefs []actionRef `xml:"ActionReference"`
+}
+
+type actionRef struct {
+	XMLName xml.Name `xml:"ActionReference"`
+	Name    string   `xml:"Name,attr"`
+}
+
+type animation struct {
+	XMLName xml.Name `xml:"Animation"`
+	Poses   []pose   `xml:"Pose"`
+}
+
+type pose struct {
+	XMLName     xml.Name `xml:"Pose"`
+	Image       string   `xml:"Image,attr"`
+	ImageAnchor string   `xml:"ImageAnchor,attr"`
+	Velocity    string   `xml:"Velocity,attr"`
+	Duration    int      `xml:"Duration,attr"`
+	Sound       string   `xml:"Sound,attr"`
+	Volume      int      `xml:"Volume,attr"`
 }
