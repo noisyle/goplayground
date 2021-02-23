@@ -7,17 +7,14 @@ import (
 	"os"
 )
 
-// Cmd 指令
 type Cmd struct {
 	Op string
 }
 
-// SendCmd 发送指令
 func SendCmd(cmd *Cmd) {
 	fmt.Println(cmd.Op)
 }
 
-// Init 初始化
 func Init() {
 	loadActions()
 }

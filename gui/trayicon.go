@@ -7,7 +7,6 @@ import (
 	"github.com/lxn/walk"
 )
 
-// Start 启动 GUI
 func Start() {
 	// We need either a walk.MainWindow or a walk.Dialog for their message loop.
 	// We will not make it visible in this example, though.
