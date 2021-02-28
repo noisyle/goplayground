@@ -2,7 +2,7 @@ package gui
 
 import (
 	"log"
-	"shimeji/daemon"
+	"shimeji/core"
 
 	"github.com/lxn/walk"
 	"github.com/lxn/walk/declarative"
@@ -47,7 +47,7 @@ func Start() {
 			return
 		}
 
-		daemon.SendCmd(&daemon.Cmd{Op: "left_click"})
+		core.SendCmd(&core.Cmd{Op: "left_click"})
 		go mascot.Run()
 
 		if err := ni.ShowCustom(
