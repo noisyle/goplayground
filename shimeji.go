@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/lxn/walk"
@@ -17,41 +18,64 @@ func main() {
 	// core.Init()
 	// gui.Start()
 
-	var mascot *walk.MainWindow
+	var mWindow *walk.MainWindow
+	var mImageView *walk.ImageView
 
 	declarative.MainWindow{
-		Title:    "Mascot",
-		AssignTo: &mascot,
-		Size:     declarative.Size{Width: mWidth, Height: mHeight},
+		AssignTo: &mWindow,
 		Visible:  false,
-		Layout:   declarative.VBox{},
-		Children: []declarative.Widget{},
+		Layout:   declarative.VBox{MarginsZero: true},
+		Children: []declarative.Widget{
+			declarative.ImageView{
+				AssignTo: &mImageView,
+				Image:    "mascot/hiiro/shime1.png",
+				MinSize:  declarative.Size{Width: mWidth, Height: mHeight},
+			},
+		},
 	}.Create()
 
-	defaultStyle := win.GetWindowLong(mascot.Handle(), win.GWL_STYLE)
+	// 去除标题菜单和边框
+	defaultStyle := win.GetWindowLong(mWindow.Handle(), win.GWL_STYLE)
 	mStyle := defaultStyle &^ win.WS_THICKFRAME &^ win.WS_SYSMENU &^ win.WS_CAPTION
-	win.SetWindowLong(mascot.Handle(), win.GWL_STYLE, mStyle)
+	win.SetWindowLong(mWindow.Handle(), win.GWL_STYLE, mStyle)
+
+	// 移动到屏幕中央
+	xScreen := win.GetSystemMetrics(win.SM_CXSCREEN)
+	yScreen := win.GetSystemMetrics(win.SM_CYSCREEN)
+	win.SetWindowPos(
+		mWindow.Handle(),
+		0,
+		(xScreen-mWidth)/2,
+		(yScreen-mHeight)/2,
+		0,
+		0,
+		0,
+	)
 
 	go func() {
 		time.Sleep(time.Duration(1) * time.Second)
-		win.ShowWindow(mascot.Handle(), win.SW_SHOW)
+		win.ShowWindow(mWindow.Handle(), win.SW_SHOW)
 
-		time.Sleep(time.Duration(2) * time.Second)
-		xScreen := win.GetSystemMetrics(win.SM_CXSCREEN)
-		yScreen := win.GetSystemMetrics(win.SM_CYSCREEN)
-		win.SetWindowPos(
-			mascot.Handle(),
-			0,
-			(xScreen-mHeight)/2,
-			(yScreen-mHeight)/2,
-			mHeight,
-			mHeight,
-			win.SWP_FRAMECHANGED,
-		)
+		var rect win.RECT
+		win.GetWindowRect(mWindow.Handle(), &rect)
+		for i := 1; i < 10; i++ {
+			time.Sleep(time.Duration(200) * time.Millisecond)
+			win.SetWindowPos(
+				mWindow.Handle(),
+				0,
+				rect.Left+int32(i*10),
+				rect.Top,
+				0,
+				0,
+				0,
+			)
+			image, _ := walk.NewImageFromFileForDPI(fmt.Sprintf("mascot/hiiro/shime%d.png", i), 96)
+			mImageView.SetImage(image)
+		}
 
-		time.Sleep(time.Duration(2) * time.Second)
-		mascot.Close()
+		time.Sleep(time.Duration(1) * time.Second)
+		mWindow.Close()
 	}()
 
-	mascot.Run()
+	mWindow.Run()
 }
