@@ -23,6 +23,7 @@ func main() {
 
 	declarative.MainWindow{
 		AssignTo: &mWindow,
+		Size:     declarative.Size{Width: mWidth, Height: mHeight},
 		Visible:  false,
 		Layout:   declarative.VBox{MarginsZero: true},
 		Children: []declarative.Widget{
@@ -47,8 +48,8 @@ func main() {
 		0,
 		(xScreen-mWidth)/2,
 		(yScreen-mHeight)/2,
-		0,
-		0,
+		mWidth,
+		mHeight,
 		0,
 	)
 
@@ -65,8 +66,8 @@ func main() {
 				0,
 				rect.Left+int32(i*10),
 				rect.Top,
-				0,
-				0,
+				mWidth,
+				mHeight,
 				0,
 			)
 			image, _ := walk.NewImageFromFileForDPI(fmt.Sprintf("mascot/hiiro/shime%d.png", i), 96)
