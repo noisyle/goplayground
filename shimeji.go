@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	SIZE_W = 128
-	SIZE_H = 128
+	mWidth  = 128
+	mHeight = 128
 )
 
 func main() {
@@ -22,18 +22,18 @@ func main() {
 	declarative.MainWindow{
 		Title:    "Mascot",
 		AssignTo: &mascot,
-		Size:     declarative.Size{Width: SIZE_W, Height: SIZE_H},
+		Size:     declarative.Size{Width: mWidth, Height: mHeight},
 		Visible:  false,
 		Layout:   declarative.VBox{},
 		Children: []declarative.Widget{},
 	}.Create()
 
 	defaultStyle := win.GetWindowLong(mascot.Handle(), win.GWL_STYLE)
-	newStyle := defaultStyle &^ win.WS_THICKFRAME
-	win.SetWindowLong(mascot.Handle(), win.GWL_STYLE, newStyle)
+	mStyle := defaultStyle &^ win.WS_THICKFRAME &^ win.WS_SYSMENU &^ win.WS_CAPTION
+	win.SetWindowLong(mascot.Handle(), win.GWL_STYLE, mStyle)
 
 	go func() {
-		time.Sleep(time.Duration(2) * time.Second)
+		time.Sleep(time.Duration(1) * time.Second)
 		win.ShowWindow(mascot.Handle(), win.SW_SHOW)
 
 		time.Sleep(time.Duration(2) * time.Second)
@@ -42,17 +42,16 @@ func main() {
 		win.SetWindowPos(
 			mascot.Handle(),
 			0,
-			(xScreen-SIZE_W)/2,
-			(yScreen-SIZE_H)/2,
-			SIZE_W,
-			SIZE_H,
+			(xScreen-mHeight)/2,
+			(yScreen-mHeight)/2,
+			mHeight,
+			mHeight,
 			win.SWP_FRAMECHANGED,
 		)
 
 		time.Sleep(time.Duration(2) * time.Second)
-		win.ShowWindow(mascot.Handle(), win.SW_HIDE)
+		mascot.Close()
 	}()
 
 	mascot.Run()
-
 }
