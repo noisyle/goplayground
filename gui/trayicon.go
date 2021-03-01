@@ -8,7 +8,7 @@ import (
 	"github.com/lxn/walk/declarative"
 )
 
-func Start() {
+func CreateTrayIcon() {
 	mw, err := walk.NewMainWindow()
 	if err != nil {
 		log.Fatal(err)

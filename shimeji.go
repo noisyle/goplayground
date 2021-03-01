@@ -1,82 +1,41 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/lxn/walk"
-	declarative "github.com/lxn/walk/declarative"
-	"github.com/lxn/win"
-)
-
-const (
-	mWidth  = 128
-	mHeight = 128
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/widget"
 )
 
 func main() {
-	// core.Init()
-	// gui.Start()
+	a := app.New()
 
-	var mWindow *walk.MainWindow
-	var mImageView *walk.ImageView
+	if drv, ok := fyne.CurrentApp().Driver().(desktop.Driver); ok {
+		w := drv.CreateSplashWindow()
+		image := canvas.NewImageFromFile("mascot/hiiro/shime1.png")
+		image.FillMode = canvas.ImageFillOriginal
+		w.SetContent(image)
+		w.Show()
 
-	declarative.MainWindow{
-		AssignTo: &mWindow,
-		Size:     declarative.Size{Width: mWidth, Height: mHeight},
-		Visible:  false,
-		Layout:   declarative.VBox{MarginsZero: true},
-		Children: []declarative.Widget{
-			declarative.ImageView{
-				AssignTo: &mImageView,
-				Image:    "mascot/hiiro/shime1.png",
-				MinSize:  declarative.Size{Width: mWidth, Height: mHeight},
-			},
-		},
-	}.Create()
+		go func() {
+			time.Sleep(time.Second * 3)
+			w.Close()
+		}()
+	}
 
-	// 去除标题菜单和边框
-	defaultStyle := win.GetWindowLong(mWindow.Handle(), win.GWL_STYLE)
-	mStyle := defaultStyle &^ win.WS_THICKFRAME &^ win.WS_SYSMENU &^ win.WS_CAPTION
-	win.SetWindowLong(mWindow.Handle(), win.GWL_STYLE, mStyle)
+	w := a.NewWindow("Hello")
 
-	// 移动到屏幕中央
-	xScreen := win.GetSystemMetrics(win.SM_CXSCREEN)
-	yScreen := win.GetSystemMetrics(win.SM_CYSCREEN)
-	win.SetWindowPos(
-		mWindow.Handle(),
-		0,
-		(xScreen-mWidth)/2,
-		(yScreen-mHeight)/2,
-		mWidth,
-		mHeight,
-		0,
-	)
+	hello := widget.NewLabel("Hello Fyne!")
+	w.SetContent(container.NewVBox(
+		hello,
+		widget.NewButton("Hi!", func() {
+			hello.SetText("Welcome :)")
+		}),
+	))
 
-	go func() {
-		time.Sleep(time.Duration(1) * time.Second)
-		win.ShowWindow(mWindow.Handle(), win.SW_SHOW)
-
-		var rect win.RECT
-		win.GetWindowRect(mWindow.Handle(), &rect)
-		for i := 1; i < 10; i++ {
-			time.Sleep(time.Duration(200) * time.Millisecond)
-			win.SetWindowPos(
-				mWindow.Handle(),
-				0,
-				rect.Left+int32(i*10),
-				rect.Top,
-				mWidth,
-				mHeight,
-				0,
-			)
-			image, _ := walk.NewImageFromFileForDPI(fmt.Sprintf("mascot/hiiro/shime%d.png", i), 96)
-			mImageView.SetImage(image)
-		}
-
-		time.Sleep(time.Duration(1) * time.Second)
-		mWindow.Close()
-	}()
-
-	mWindow.Run()
+	w.ShowAndRun()
 }
