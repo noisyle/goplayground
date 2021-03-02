@@ -54,14 +54,14 @@ func CreateMascot() {
 		time.Sleep(time.Duration(1) * time.Second)
 		win.ShowWindow(mWindow.Handle(), win.SW_SHOW)
 
-		var rect win.RECT
-		win.GetWindowRect(mWindow.Handle(), &rect)
 		for i := 1; i < 10; i++ {
+			var rect win.RECT
+			win.GetWindowRect(mWindow.Handle(), &rect)
 			time.Sleep(time.Duration(200) * time.Millisecond)
 			win.SetWindowPos(
 				mWindow.Handle(),
 				0,
-				rect.Left+int32(i*10),
+				rect.Left+10,
 				rect.Top,
 				mWidth,
 				mHeight,
