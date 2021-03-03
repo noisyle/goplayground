@@ -1,8 +1,7 @@
 package gui
 
 import (
-	"image"
-	"math"
+	"fmt"
 	"syscall"
 	"time"
 	"unsafe"
@@ -19,7 +18,6 @@ const (
 
 func CreateMascot() {
 	var mWindow *walk.MainWindow
-	// var mImageView *walk.ImageView
 
 	declarative.MainWindow{
 		AssignTo: &mWindow,
@@ -45,37 +43,13 @@ func CreateMascot() {
 		0,
 	)
 
-	var rect win.RECT
-	win.GetWindowRect(mWindow.Handle(), &rect)
-
-	mImage, _ := walk.NewBitmapFromFile("mascot/hiiro/shime1.png")
-	rgba, _ := mImage.ToImage()
-	hbitmap, _ := hBitmapFromImage(image.Image(rgba), 96)
-
-	hdcWnd := win.GetDC(mWindow.Handle())
-	hdc := win.CreateCompatibleDC(hdcWnd)
-	win.SelectObject(hdc, win.HGDIOBJ(hbitmap))
-	defer win.DeleteDC(hdc)
-	defer win.DeleteDC(hdcWnd)
-	defer win.DeleteObject(win.HGDIOBJ(hbitmap))
-
-	ptDst := win.POINT{X: rect.Left, Y: rect.Top}
-	ptSrc := win.POINT{X: 0, Y: 0}
-	sizeWnd := win.SIZE{CX: int32(mImage.Size().Width), CY: int32(mImage.Size().Height)}
-	bf := win.BLENDFUNCTION{
-		BlendOp:             0x1, // AC_SRC_OVER
-		BlendFlags:          0,
-		SourceConstantAlpha: 255,
-		AlphaFormat:         win.AC_SRC_ALPHA,
-	}
-
-	updateLayeredWindow(mWindow.Handle(), hdcWnd, &ptDst, &sizeWnd, hdc, &ptSrc, 0, &bf, 0x2 /* ULW_ALPHA */)
+	updateWindow(mWindow.Handle(), "mascot/hiiro/shime1.png")
+	win.ShowWindow(mWindow.Handle(), win.SW_SHOW)
 
 	go func() {
 		time.Sleep(time.Duration(1) * time.Second)
-		win.ShowWindow(mWindow.Handle(), win.SW_SHOW)
 
-		for i := 1; i < 10; i++ {
+		for i := 0; i < 10; i++ {
 			time.Sleep(time.Duration(200) * time.Millisecond)
 			var rect win.RECT
 			win.GetWindowRect(mWindow.Handle(), &rect)
@@ -88,6 +62,7 @@ func CreateMascot() {
 				mHeight,
 				0,
 			)
+			updateWindow(mWindow.Handle(), fmt.Sprintf("mascot/hiiro/shime%d.png", i+2))
 		}
 
 		time.Sleep(time.Duration(1) * time.Second)
@@ -97,48 +72,59 @@ func CreateMascot() {
 	mWindow.Run()
 }
 
-func hBitmapFromImage(im image.Image, dpi int) (win.HBITMAP, error) {
-	var bi win.BITMAPV5HEADER
-	bi.BiSize = uint32(unsafe.Sizeof(bi))
-	bi.BiWidth = int32(im.Bounds().Dx())
-	bi.BiHeight = -int32(im.Bounds().Dy())
-	bi.BiPlanes = 1
-	bi.BiBitCount = 32
-	bi.BiCompression = win.BI_BITFIELDS
-	const inchesPerMeter float64 = 39.37007874
-	dpm := int32(math.Round(float64(dpi) * inchesPerMeter))
-	bi.BiXPelsPerMeter = dpm
-	bi.BiYPelsPerMeter = dpm
-	// The following mask specification specifies a supported 32 BPP
-	// alpha format for Windows XP.
-	bi.BV4RedMask = 0x00FF0000
-	bi.BV4GreenMask = 0x0000FF00
-	bi.BV4BlueMask = 0x000000FF
-	bi.BV4AlphaMask = 0xFF000000
+func updateWindow(hWnd win.HWND, filePath string) {
+	hbitmap, _ := newHBITMAPFromFile(filePath, 96)
 
-	hdc := win.GetDC(0)
-	defer win.ReleaseDC(0, hdc)
+	hdcWnd := win.GetDC(hWnd)
+	hdc := win.CreateCompatibleDC(hdcWnd)
+	win.SelectObject(hdc, win.HGDIOBJ(hbitmap))
+	defer win.DeleteDC(hdc)
+	defer win.DeleteDC(hdcWnd)
+	defer win.DeleteObject(win.HGDIOBJ(hbitmap))
 
-	var lpBits unsafe.Pointer
-
-	// Create the DIB section with an alpha channel.
-	hBitmap := win.CreateDIBSection(hdc, &bi.BITMAPINFOHEADER, win.DIB_RGB_COLORS, &lpBits, 0, 0)
-
-	// Fill the image
-	bitmapArray := (*[1 << 30]byte)(unsafe.Pointer(lpBits))
-	i := 0
-	for y := im.Bounds().Min.Y; y != im.Bounds().Max.Y; y++ {
-		for x := im.Bounds().Min.X; x != im.Bounds().Max.X; x++ {
-			r, g, b, a := im.At(x, y).RGBA()
-			bitmapArray[i+3] = byte(a >> 8)
-			bitmapArray[i+2] = byte(r >> 8)
-			bitmapArray[i+1] = byte(g >> 8)
-			bitmapArray[i+0] = byte(b >> 8)
-			i += 4
-		}
+	var rect win.RECT
+	win.GetWindowRect(hWnd, &rect)
+	ptDst := win.POINT{X: rect.Left, Y: rect.Top}
+	ptSrc := win.POINT{X: 0, Y: 0}
+	sizeWnd := win.SIZE{CX: int32(mWidth), CY: int32(mHeight)}
+	bf := win.BLENDFUNCTION{
+		BlendOp:             0x1, // AC_SRC_OVER
+		BlendFlags:          0,
+		SourceConstantAlpha: 255,
+		AlphaFormat:         win.AC_SRC_ALPHA,
 	}
 
-	return hBitmap, nil
+	updateLayeredWindow(hWnd, hdcWnd, &ptDst, &sizeWnd, hdc, &ptSrc, 0, &bf, 0x2 /* ULW_ALPHA */)
+}
+
+type Error struct {
+	message string
+}
+
+func (err *Error) Error() string {
+	return err.message
+}
+
+func newHBITMAPFromFile(filePath string, dpi int) (win.HBITMAP, error) {
+	var si win.GdiplusStartupInput
+	si.GdiplusVersion = 1
+	if status := win.GdiplusStartup(&si, nil); status != win.Ok {
+		return 0, &Error{message: fmt.Sprintf("GdiplusStartup failed with status '%s'", status)}
+	}
+	defer win.GdiplusShutdown()
+
+	var gpBmp *win.GpBitmap
+	if status := win.GdipCreateBitmapFromFile(syscall.StringToUTF16Ptr(filePath), &gpBmp); status != win.Ok {
+		return 0, &Error{message: fmt.Sprintf("GdipCreateBitmapFromFile failed with status '%s' for file '%s'", status, filePath)}
+	}
+	defer win.GdipDisposeImage((*win.GpImage)(gpBmp))
+
+	var hBmp win.HBITMAP
+	if status := win.GdipCreateHBITMAPFromBitmap(gpBmp, &hBmp, 0); status != win.Ok {
+		return 0, &Error{message: fmt.Sprintf("GdipCreateHBITMAPFromBitmap failed with status '%s' for file '%s'", status, filePath)}
+	}
+
+	return hBmp, nil
 }
 
 func updateLayeredWindow(hWnd win.HWND, hdcDst win.HDC, pptDst *win.POINT, psize *win.SIZE, hdcSrc win.HDC, pptSrc *win.POINT, crKey win.COLORREF, pblend *win.BLENDFUNCTION, dwFlags uint32) bool {
